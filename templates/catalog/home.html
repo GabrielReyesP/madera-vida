@@ -1,0 +1,68 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Madera & Vida — Productos de madera con oficio{% endblock %}
+
+{% block content %}
+
+<section class="max-w-6xl mx-auto px-6 pt-16 pb-20 grid md:grid-cols-2 gap-12 items-center">
+    <div>
+        <p class="font-mono text-xs tracking-widest text-clay uppercase mb-4">Taller &amp; tienda · Chile</p>
+        <h1 class="font-display text-5xl md:text-6xl font-semibold leading-[1.05] text-bark mb-6">
+            {{ company.name|default:"Madera & Vida" }}
+        </h1>
+        <p class="text-lg text-bark/70 leading-relaxed mb-8 max-w-md">
+            {{ company.description|default:"Muebles y objetos de madera hechos a mano, pensados para durar generaciones." }}
+        </p>
+        <a href="{% url 'catalog:product_list' %}"
+           class="inline-flex items-center gap-2 bg-bark text-cream px-6 py-3 rounded-sm font-medium
+                  hover:bg-clay transition-colors focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 focus:ring-offset-cream">
+            Ver catálogo
+            <span aria-hidden="true">&rarr;</span>
+        </a>
+    </div>
+    <div class="grain-rule md:h-full md:w-[3px] md:rotate-0"></div>
+</section>
+
+{% if categories %}
+<section class="max-w-6xl mx-auto px-6 pb-14">
+    <div class="flex flex-wrap gap-3">
+        {% for category in categories %}
+            <a href="{% url 'catalog:product_list' %}?categoria={{ category.slug }}"
+               class="px-4 py-2 rounded-sm border border-walnut/30 text-sm font-medium text-bark
+                      hover:border-clay hover:text-clay transition-colors">
+                {{ category.name }}
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="max-w-6xl mx-auto px-6 pb-20">
+    <div class="flex items-baseline justify-between mb-8">
+        <h2 class="font-display text-2xl font-semibold text-bark">Destacados</h2>
+        <a href="{% url 'catalog:product_list' %}" class="text-sm text-clay hover:underline">Ver todo</a>
+    </div>
+
+    {% if featured_products %}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {% for product in featured_products %}
+                <a href="{{ product.get_absolute_url }}" class="group block">
+                    <div class="aspect-square bg-walnut/5 rounded-sm overflow-hidden mb-3 flex items-center justify-center">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        {% else %}
+                            <span class="font-display text-4xl text-walnut/20">M&amp;V</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="font-medium text-sm text-bark group-hover:text-clay transition-colors">{{ product.name }}</h3>
+                    <p class="font-mono text-sm text-bark/70 mt-1">${{ product.price_with_iva|floatformat:0 }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-bark/50 text-sm">Aún no hay productos publicados. Agrega productos desde el panel de administración.</p>
+    {% endif %}
+</section>
+
+{% endblock %}

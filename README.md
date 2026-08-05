@@ -98,7 +98,7 @@ madera_vida/
 
 - [x] Configuración base del proyecto y entornos
 - [x] Modelo de usuario personalizado con roles
-- [ ] Modelos de catálogo (`Category`, `Product`)
+- [x] Modelos de catálogo (`Category`, `Product`)
 - [ ] Carrito de compras y checkout
 - [ ] Módulo de horas extra y liquidaciones
 - [ ] Dashboard con métricas

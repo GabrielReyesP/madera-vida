@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Madera & Vida{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bark: '#3E2B1F',
+                        walnut: '#8B4513',
+                        clay: '#A0522D',
+                        cream: '#FAF7F2',
+                        brass: '#B8860B',
+                        sage: '#6B7A55',
+                    },
+                    fontFamily: {
+                        display: ['Fraunces', 'serif'],
+                        body: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; transition: none !important; }
+        }
+        .grain-rule {
+            height: 3px;
+            background: repeating-linear-gradient(
+                115deg,
+                #A0522D 0px, #A0522D 2px,
+                #8B4513 2px, #8B4513 4px,
+                #3E2B1F 4px, #3E2B1F 5px,
+                transparent 5px, transparent 9px
+            );
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-cream text-bark font-body antialiased flex flex-col min-h-screen">
+
+    <header class="bg-cream border-b border-walnut/20 sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="{% url 'catalog:home' %}" class="font-display text-2xl font-semibold text-bark tracking-tight">
+                Madera <span class="text-clay">&amp;</span> Vida
+            </a>
+            <nav class="hidden md:flex items-center gap-8 font-body text-sm font-medium text-bark/80">
+                <a href="{% url 'catalog:home' %}" class="hover:text-clay transition-colors">Inicio</a>
+                <a href="{% url 'catalog:product_list' %}" class="hover:text-clay transition-colors">Catálogo</a>
+                <a href="#" class="hover:text-clay transition-colors">Mi cuenta</a>
+                <a href="#" class="hover:text-clay transition-colors">Carrito</a>
+            </nav>
+        </div>
+        <div class="grain-rule"></div>
+    </header>
+
+    <main class="flex-1">
+        {% if messages %}
+            <div class="max-w-6xl mx-auto px-6 pt-4 space-y-2">
+                {% for message in messages %}
+                    <div class="rounded-md px-4 py-3 text-sm bg-walnut/10 text-bark border border-walnut/20">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-bark text-cream/80 mt-16">
+        <div class="grain-rule"></div>
+        <div class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+            <div>
+                <h3 class="font-display text-lg text-cream mb-2">Madera &amp; Vida</h3>
+                <p class="text-cream/60">{{ company.description|default:"Productos de madera hechos con oficio." }}</p>
+            </div>
+            <div>
+                <h4 class="font-medium text-cream mb-2">Visítanos</h4>
+                <p class="text-cream/60">{{ company.address|default:"Dirección por definir" }}</p>
+                <p class="text-cream/60">{{ company.schedule|default:"Horario por definir" }}</p>
+            </div>
+            <div>
+                <h4 class="font-medium text-cream mb-2">Contacto</h4>
+                {% if company.phone %}<p class="text-cream/60">{{ company.phone }}</p>{% endif %}
+                {% if company.email %}<p class="text-cream/60">{{ company.email }}</p>{% endif %}
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto px-6 pb-6 text-xs text-cream/40">
+            &copy; {% now "Y" %} Madera &amp; Vida. Proyecto de portafolio.
+        </div>
+    </footer>
+</body>
+</html>
