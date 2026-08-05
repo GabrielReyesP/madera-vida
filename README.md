@@ -105,7 +105,7 @@ madera_vida/
 
 ## 👤 Autor
 
-Desarrollado por [tu nombre] como parte de portafolio de desarrollo full-stack.
+Desarrollado por Gabriel Alonso Reyes Pino como parte de portafolio de desarrollo full-stack.
 
 ## 📄 Licencia
 
