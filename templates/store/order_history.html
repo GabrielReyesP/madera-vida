@@ -1,0 +1,27 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Mis pedidos — Madera & Vida{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-6 pt-12 pb-20">
+    <h1 class="font-display text-3xl font-semibold text-bark mb-8">Mis pedidos</h1>
+
+    {% if orders %}
+        <div class="divide-y divide-walnut/10 border-t border-b border-walnut/10">
+            {% for order in orders %}
+                <a href="{% url 'store:order_detail' order.order_number %}"
+                   class="flex items-center justify-between py-4 hover:bg-walnut/5 transition-colors px-2 -mx-2">
+                    <div>
+                        <p class="font-mono text-sm text-bark">{{ order.order_number }}</p>
+                        <p class="text-xs text-bark/50">{{ order.created_at|date:"d-m-Y H:i" }} · {{ order.get_status_display }}</p>
+                    </div>
+                    <p class="font-mono text-sm text-bark">${{ order.total|floatformat:0 }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-bark/50 text-sm mb-6">Aún no tienes pedidos.</p>
+        <a href="{% url 'catalog:product_list' %}" class="text-clay hover:underline text-sm">Ver catálogo</a>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,19 @@
+Hola {{ order.contact_name }},
+
+¡Gracias por tu compra en Madera & Vida! Tu pedido {{ order.order_number }} fue confirmado.
+
+Detalle:
+{% for item in order.items.all %}
+- {{ item.quantity }} x {{ item.product_name }} ..... ${{ item.line_net|floatformat:0 }}
+{% endfor %}
+
+Neto: ${{ order.net_total|floatformat:0 }}
+IVA (19%): ${{ order.iva_total|floatformat:0 }}
+Total: ${{ order.total|floatformat:0 }}
+
+Modalidad: retiro en tienda.
+
+Puedes ver el detalle de tu pedido en cualquier momento en:
+{{ order.order_number }}
+
+— Equipo Madera & Vida

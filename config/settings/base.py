@@ -96,9 +96,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # Context processor personalizado (Fase 2):
               
-                # 'apps.store.context_processors.cart_count',
+               
             ],
         },
     },

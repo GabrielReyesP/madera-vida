@@ -1,0 +1,68 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Carrito — Madera & Vida{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-6 pt-12 pb-20">
+    <h1 class="font-display text-3xl font-semibold text-bark mb-8">Tu carrito</h1>
+
+    {% if cart.is_empty %}
+        <p class="text-bark/50 text-sm mb-6">Tu carrito está vacío.</p>
+        <a href="{% url 'catalog:product_list' %}" class="text-clay hover:underline text-sm">
+            &larr; Ver catálogo
+        </a>
+    {% else %}
+        <div class="divide-y divide-walnut/10 border-t border-b border-walnut/10">
+            {% for item in cart %}
+                <div class="flex items-center gap-4 py-4">
+                    <div class="w-16 h-16 bg-walnut/5 rounded-sm overflow-hidden flex items-center justify-center shrink-0">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <span class="font-display text-sm text-walnut/20">M&amp;V</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <a href="{{ item.product.get_absolute_url }}" class="font-medium text-sm text-bark hover:text-clay transition-colors">
+                            {{ item.product.name }}
+                        </a>
+                        <p class="font-mono text-xs text-bark/50 mt-1">${{ item.unit_price_with_iva|floatformat:0 }} c/u</p>
+                    </div>
+
+                    <form method="post" action="{% url 'store:cart_update' item.product.id %}" class="flex items-center gap-2">
+                        {% csrf_token %}
+                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}"
+                               class="w-16 border border-walnut/30 rounded-sm px-2 py-1 text-sm text-center">
+                        <button type="submit" class="text-xs text-clay hover:underline">Actualizar</button>
+                    </form>
+
+                    <p class="font-mono text-sm text-bark w-24 text-right">${{ item.line_total|floatformat:0 }}</p>
+
+                    <form method="post" action="{% url 'store:cart_remove' item.product.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="text-bark/30 hover:text-clay transition-colors" aria-label="Eliminar">
+                            &times;
+                        </button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="flex justify-end mt-6">
+            <div class="text-right">
+                <p class="text-sm text-bark/50">Total ({{ cart|length }} producto{{ cart|length|pluralize }})</p>
+                <p class="font-mono text-2xl text-bark">${{ cart.get_total_price|floatformat:0 }}</p>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-8">
+            <a href="{% url 'catalog:product_list' %}" class="text-sm text-clay hover:underline">&larr; Seguir comprando</a>
+            <a href="{% url 'store:checkout' %}"
+               class="bg-bark text-cream px-8 py-3 rounded-sm font-medium hover:bg-clay transition-colors">
+                Ir a pagar
+            </a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
