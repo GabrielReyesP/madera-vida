@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel interno — Madera & Vida{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bark: '#3E2B1F', walnut: '#8B4513', clay: '#A0522D',
+                        cream: '#FAF7F2', brass: '#B8860B', sage: '#6B7A55',
+                    },
+                    fontFamily: {
+                        display: ['Fraunces', 'serif'],
+                        body: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+
+    <style>
+        .grain-rule {
+            height: 3px;
+            background: repeating-linear-gradient(
+                115deg, #A0522D 0px, #A0522D 2px, #8B4513 2px, #8B4513 4px,
+                #3E2B1F 4px, #3E2B1F 5px, transparent 5px, transparent 9px
+            );
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-cream text-bark font-body antialiased min-h-screen">
+
+    {% with wp=request.user.worker_profile %}
+    <header class="bg-bark text-cream sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <a href="{% url 'dashboard:index' %}" class="font-display text-lg font-semibold">
+                    Madera &amp; Vida
+                </a>
+                <span class="text-cream/40 text-xs uppercase tracking-widest">Panel interno</span>
+            </div>
+            <nav class="flex items-center gap-5 text-sm font-medium">
+                <a href="{% url 'dashboard:index' %}" class="hover:text-clay transition-colors">Dashboard</a>
+                <a href="{% url 'dashboard:product_list' %}" class="hover:text-clay transition-colors">Productos</a>
+                {% if wp.can_manage_orders %}
+                    <a href="{% url 'dashboard:order_list' %}" class="hover:text-clay transition-colors">Pedidos</a>
+                {% endif %}
+                {% if wp.is_superior %}
+                    <a href="{% url 'dashboard:worker_list' %}" class="hover:text-clay transition-colors">Trabajadores</a>
+                    <a href="{% url 'dashboard:audit_log' %}" class="hover:text-clay transition-colors">Auditoría</a>
+                {% endif %}
+                <a href="{% url 'catalog:home' %}" class="text-cream/50 hover:text-cream transition-colors">Ver tienda</a>
+                <form action="{% url 'accounts:logout' %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="hover:text-clay transition-colors">Salir</button>
+                </form>
+            </nav>
+        </div>
+        <div class="grain-rule"></div>
+    </header>
+    {% endwith %}
+
+    <main class="max-w-6xl mx-auto px-6 py-8">
+        {% if messages %}
+            <div class="space-y-2 mb-6">
+                {% for message in messages %}
+                    <div class="rounded-md px-4 py-3 text-sm
+                                {% if message.tags == 'error' %}bg-clay/10 text-clay border border-clay/30
+                                {% else %}bg-sage/10 text-sage border border-sage/30{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

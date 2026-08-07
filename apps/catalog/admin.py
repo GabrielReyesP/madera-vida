@@ -9,7 +9,7 @@ from .models import Category, Product
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
+    list_display = ('name', 'slug', 'sku_prefix')
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ('name',)
 
@@ -24,6 +24,23 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('name', 'sku')
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ('created_at', 'updated_at')
+
+    def get_fields(self, request, obj=None):
+        fields = [
+            'category', 'name', 'slug', 'description', 'image', 'sku',
+            'price_net', 'stock', 'low_stock_threshold', 'is_active',
+            'created_at', 'updated_at',
+        ]
+        if obj is None:
+            # Al crear: el SKU aun no existe, se genera solo al guardar.
+            fields = [f for f in fields if f not in ('sku', 'created_at', 'updated_at')]
+        return fields
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj is None:
+            return self.readonly_fields
+        # Al editar: el SKU ya fue asignado, no se puede modificar.
+        return self.readonly_fields + ('sku',)
 
     @admin.display(boolean=True, description='Stock bajo')
     def display_is_low_stock(self, obj):

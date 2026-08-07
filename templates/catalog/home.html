@@ -20,7 +20,13 @@
             <span aria-hidden="true">&rarr;</span>
         </a>
     </div>
-    <div class="grain-rule md:h-full md:w-[3px] md:rotate-0"></div>
+    <div class="aspect-square md:aspect-auto md:h-full rounded-sm overflow-hidden bg-walnut/5 flex items-center justify-center">
+        {% if company.hero_image %}
+            <img src="{{ company.hero_image.url }}" alt="{{ company.name }}" class="w-full h-full object-cover">
+        {% else %}
+            <span class="font-display text-6xl text-walnut/20">M&amp;V</span>
+        {% endif %}
+    </div>
 </section>
 
 {% if categories %}

@@ -1,9 +1,10 @@
 """
 apps/core/models.py
 CompanyInfo: datos de la empresa para el sitio publico (RF-01).
-Tabla 'singleton': siempre existe un unico registro (pk=1).
+AuditLog: registro de auditoria de acciones sensibles (RF-20, RL-07).
 """
 
+from django.conf import settings
 from django.db import models
 
 
@@ -17,6 +18,10 @@ class CompanyInfo(models.Model):
     )
     phone = models.CharField('Telefono', max_length=20, blank=True)
     email = models.EmailField('Correo de contacto', blank=True)
+    hero_image = models.ImageField(
+        'Foto principal', upload_to='company/', blank=True, null=True,
+        help_text='Se muestra junto a la descripción en la página principal.',
+    )
 
     class Meta:
         verbose_name = 'Informacion de la empresa'
@@ -40,3 +45,45 @@ class CompanyInfo(models.Model):
             'schedule': 'Por definir',
         })
         return obj
+
+
+class AuditLog(models.Model):
+    """
+    Registro de acciones sensibles del panel interno (RF-20): quien,
+    que accion, sobre que entidad, y el cambio antes/despues cuando
+    corresponde. Se escribe explicitamente desde las vistas que
+    realizan la accion (no por señales genericas), para que el
+    'antes/despues' sea exacto y no inferido.
+    """
+
+    class Action(models.TextChoices):
+        PRODUCT_UPDATE = 'product_update', 'Producto modificado'
+        PRODUCT_CREATE = 'product_create', 'Producto creado'
+        PRODUCT_DEACTIVATE = 'product_deactivate', 'Producto desactivado'
+        PRODUCT_ACTIVATE = 'product_activate', 'Producto activado'
+        PRODUCT_DELETE = 'product_delete', 'Producto eliminado'
+        ORDER_STATUS_CHANGE = 'order_status_change', 'Estado de pedido modificado'
+        WORKER_PASSWORD_RESET = 'worker_password_reset', 'Contraseña de trabajador reseteada'
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='audit_entries',
+        verbose_name='Usuario que realizo la accion',
+    )
+    action = models.CharField('Accion', max_length=30, choices=Action.choices)
+    entity = models.CharField('Entidad', max_length=100, help_text='Ej: Product, Order, CustomUser')
+    entity_id = models.CharField('ID de la entidad', max_length=50, blank=True)
+    before = models.JSONField('Antes', null=True, blank=True)
+    after = models.JSONField('Despues', null=True, blank=True)
+    ip_address = models.GenericIPAddressField('Direccion IP', null=True, blank=True)
+    created_at = models.DateTimeField('Fecha', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Registro de auditoria'
+        verbose_name_plural = 'Registros de auditoria'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.get_action_display()} · {self.entity} · {self.created_at:%d-%m-%Y %H:%M}'

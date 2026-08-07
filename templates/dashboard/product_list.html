@@ -1,0 +1,73 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}Productos — Panel interno{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <h1 class="font-display text-2xl font-semibold text-bark">Productos</h1>
+    {% if can_manage %}
+        <a href="{% url 'dashboard:product_create' %}"
+           class="bg-bark text-cream px-5 py-2 rounded-sm text-sm font-medium hover:bg-clay transition-colors">
+            + Nuevo producto
+        </a>
+    {% endif %}
+</div>
+
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-bark/50 border-b border-walnut/20">
+                <th class="py-2 pr-4">Producto</th>
+                <th class="py-2 pr-4">SKU</th>
+                <th class="py-2 pr-4">Categoría</th>
+                <th class="py-2 pr-4 text-right">Precio neto</th>
+                <th class="py-2 pr-4 text-right">Stock</th>
+                <th class="py-2 pr-4">Estado</th>
+                {% if can_manage %}<th class="py-2"></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-walnut/10">
+            {% for product in products %}
+                <tr>
+                    <td class="py-3 pr-4 text-bark">{{ product.name }}</td>
+                    <td class="py-3 pr-4 font-mono text-bark/60">{{ product.sku }}</td>
+                    <td class="py-3 pr-4 text-bark/60">{{ product.category.name }}</td>
+                    <td class="py-3 pr-4 text-right font-mono">${{ product.price_net|floatformat:0 }}</td>
+                    <td class="py-3 pr-4 text-right font-mono {% if product.is_low_stock %}text-clay{% endif %}">
+                        {{ product.stock }}
+                    </td>
+                    <td class="py-3 pr-4">
+                        {% if product.is_active %}
+                            <span class="text-sage text-xs">Activo</span>
+                        {% else %}
+                            <span class="text-bark/40 text-xs">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    {% if can_manage %}
+                        <td class="py-3 whitespace-nowrap">
+                            <a href="{% url 'dashboard:product_edit' product.pk %}" class="text-clay hover:underline text-xs mr-3">Editar</a>
+                            <form action="{% url 'dashboard:product_toggle_active' product.pk %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="text-bark/50 hover:text-clay text-xs mr-3">
+                                    {% if product.is_active %}Desactivar{% else %}Activar{% endif %}
+                                </button>
+                            </form>
+                            <form action="{% url 'dashboard:product_delete' product.pk %}" method="post" class="inline"
+                                  onsubmit="return confirm('¿Eliminar {{ product.name }}? Esta acción no se puede deshacer.');">
+                                {% csrf_token %}
+                                <button type="submit" class="text-bark/30 hover:text-clay text-xs">Eliminar</button>
+                            </form>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if not can_manage %}
+    <p class="text-xs text-bark/40 mt-6">
+        Puedes ver el catálogo completo, pero solo Jefatura/Administración pueden modificar stock y precios (RF-15).
+    </p>
+{% endif %}
+{% endblock %}

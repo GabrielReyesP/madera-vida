@@ -1,0 +1,56 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}{% if is_new %}Nuevo producto{% else %}Editar producto{% endif %} — Panel interno{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold text-bark mb-8">
+    {% if is_new %}Nuevo producto{% else %}Editar: {{ product.name }}{% endif %}
+</h1>
+
+{% if form.non_field_errors %}
+    <div class="bg-clay/10 border border-clay/30 text-clay text-sm rounded-sm px-4 py-3 mb-6">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+{% endif %}
+
+{% if not is_new %}
+    <div class="mb-6 max-w-xl">
+        <p class="text-sm font-medium text-bark mb-1">SKU</p>
+        <p class="font-mono text-bark/60 bg-walnut/5 border border-walnut/20 rounded-sm px-4 py-2 inline-block">
+            {{ product.sku }}
+        </p>
+        <p class="text-xs text-bark/40 mt-1">Se generó automáticamente y no se puede editar.</p>
+    </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="max-w-xl space-y-5">
+    {% csrf_token %}
+    {% if is_new %}
+        <p class="text-xs text-bark/40 -mt-2 mb-2">
+            El SKU se generará automáticamente según la categoría elegida (ej. "MUE-0004").
+        </p>
+    {% endif %}
+    {% for field in form %}
+        <div>
+            {% if field.name == 'is_active' %}
+                <label class="flex items-center gap-2 text-sm font-medium text-bark">
+                    {{ field }} {{ field.label }}
+                </label>
+            {% else %}
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-bark mb-1">{{ field.label }}</label>
+                {{ field }}
+            {% endif %}
+            {% if field.help_text %}<p class="text-xs text-bark/40 mt-1">{{ field.help_text }}</p>{% endif %}
+            {% for error in field.errors %}<p class="text-xs text-clay mt-1">{{ error }}</p>{% endfor %}
+        </div>
+    {% endfor %}
+
+    <div class="flex items-center gap-4 pt-2">
+        <button type="submit"
+                class="bg-bark text-cream px-8 py-3 rounded-sm font-medium hover:bg-clay transition-colors">
+            Guardar
+        </button>
+        <a href="{% url 'dashboard:product_list' %}" class="text-sm text-clay hover:underline">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

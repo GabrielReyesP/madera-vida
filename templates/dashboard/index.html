@@ -1,0 +1,62 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}Dashboard — Panel interno{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold text-bark mb-8">Dashboard</h1>
+
+<div class="grid md:grid-cols-2 gap-8 mb-8">
+    <div class="border border-walnut/20 rounded-sm p-6">
+        <h2 class="font-medium text-bark mb-4">Ventas — últimos 14 días</h2>
+        <canvas id="salesChart" height="180"></canvas>
+    </div>
+
+    <div class="border border-walnut/20 rounded-sm p-6">
+        <h2 class="font-medium text-bark mb-4">Stock bajo</h2>
+        {% if low_stock_products %}
+            <ul class="space-y-2">
+                {% for product in low_stock_products %}
+                    <li class="flex justify-between items-center text-sm border-b border-walnut/10 pb-2">
+                        <a href="{% url 'dashboard:product_edit' product.pk %}" class="text-bark hover:text-clay transition-colors">
+                            {{ product.name }}
+                        </a>
+                        <span class="font-mono text-clay">{{ product.stock }} und.</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-bark/50 text-sm">Ningún producto está bajo el umbral de alerta. 👍</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="border border-walnut/20 rounded-sm p-6">
+    <h2 class="font-medium text-bark mb-2">Horas extras del mes</h2>
+    <p class="text-bark/50 text-sm">
+        Este indicador se activa en Fase 5, cuando se implemente el módulo de Recursos Humanos.
+    </p>
+</div>
+
+<script>
+    const ctx = document.getElementById('salesChart');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ sales_labels_json|safe }},
+            datasets: [{
+                label: 'Ventas (CLP)',
+                data: {{ sales_data_json|safe }},
+                borderColor: '#A0522D',
+                backgroundColor: 'rgba(160, 82, 45, 0.1)',
+                tension: 0.3,
+                fill: true,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } },
+        }
+    });
+</script>
+{% endblock %}

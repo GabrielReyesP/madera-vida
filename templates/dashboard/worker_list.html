@@ -1,0 +1,44 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}Trabajadores — Panel interno{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold text-bark mb-2">Trabajadores</h1>
+<p class="text-bark/50 text-sm mb-8">
+    El alta y edición completa de trabajadores se incorpora en Fase 5 (Recursos Humanos).
+    Por ahora puedes resetear contraseñas (RF-17).
+</p>
+
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-bark/50 border-b border-walnut/20">
+                <th class="py-2 pr-4">Nombre</th>
+                <th class="py-2 pr-4">Email</th>
+                <th class="py-2 pr-4">RUT</th>
+                <th class="py-2 pr-4">Rol</th>
+                <th class="py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-walnut/10">
+            {% for worker in workers %}
+                <tr>
+                    <td class="py-3 pr-4 text-bark">{{ worker.user.get_full_name }}</td>
+                    <td class="py-3 pr-4 text-bark/60">{{ worker.user.email }}</td>
+                    <td class="py-3 pr-4 font-mono text-bark/60">{{ worker.rut }}</td>
+                    <td class="py-3 pr-4 text-bark/60">{{ worker.get_role_display }}</td>
+                    <td class="py-3">
+                        <form action="{% url 'dashboard:worker_reset_password' worker.pk %}" method="post"
+                              onsubmit="return confirm('¿Resetear la contraseña de {{ worker.user.get_full_name }}? Se generará una nueva automáticamente.');">
+                            {% csrf_token %}
+                            <button type="submit" class="text-clay hover:underline text-xs">Resetear contraseña</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="py-6 text-center text-bark/40">Aún no hay trabajadores registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
