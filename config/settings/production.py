@@ -10,7 +10,13 @@ from .base import *  # noqa: F401,F403
 # ============================================
 DEBUG = False
 
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')  # noqa: F405
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]  # noqa: F405
+
+# Necesario para que los formularios (POST) funcionen detras de HTTPS/Nginx.
+# Debe incluir el esquema, ej: https://maderavida.cl,https://www.maderavida.cl
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+]  # noqa: F405
 
 # ============================================
 # SEGURIDAD
@@ -29,6 +35,10 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Redirección HTTPS
+# Nginx termina el TLS y reenvia por HTTP, asi que Django necesita este
+# header para saber que la peticion original si venia por HTTPS (sin esto,
+# SECURE_SSL_REDIRECT provoca un bucle infinito de redirecciones).
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
 SECURE_HSTS_SECONDS = 31536000  # 1 año
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True

@@ -1,0 +1,49 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Mis datos personales — Madera & Vida{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-6 py-16">
+    <h1 class="font-display text-3xl font-semibold text-bark mb-3">Mis datos personales</h1>
+    <p class="text-bark/60 text-sm mb-10">
+        Según la Ley 19.628 y su actualización Ley 21.719, tienes derecho a acceder a tus datos,
+        corregirlos y solicitar su eliminación.
+    </p>
+
+    <div class="space-y-4">
+        <div class="border border-walnut/20 rounded-sm p-6">
+            <h2 class="font-medium text-bark mb-1">Acceder a mis datos</h2>
+            <p class="text-sm text-bark/60 mb-4">
+                Descarga una copia de toda la información que tenemos sobre ti, en formato portable.
+            </p>
+            <a href="{% url 'accounts:data_export' %}"
+               class="inline-block bg-bark text-cream px-5 py-2 rounded-sm text-sm font-medium hover:bg-clay transition-colors">
+                Descargar mis datos
+            </a>
+        </div>
+
+        <div class="border border-walnut/20 rounded-sm p-6">
+            <h2 class="font-medium text-bark mb-1">Rectificar mis datos</h2>
+            <p class="text-sm text-bark/60 mb-4">
+                Corrige tu nombre, RUT, teléfono o dirección si algún dato es incorrecto.
+            </p>
+            <a href="{% url 'accounts:data_update' %}"
+               class="inline-block border border-walnut/30 text-bark px-5 py-2 rounded-sm text-sm font-medium hover:border-clay hover:text-clay transition-colors">
+                Editar mis datos
+            </a>
+        </div>
+
+        <div class="border border-clay/30 rounded-sm p-6 bg-clay/5">
+            <h2 class="font-medium text-bark mb-1">Eliminar mi cuenta</h2>
+            <p class="text-sm text-bark/60 mb-4">
+                Elimina tu cuenta y tus datos personales. Tus pedidos se conservarán de forma
+                anonimizada, ya que la normativa tributaria obliga a mantener los registros contables.
+            </p>
+            <a href="{% url 'accounts:data_delete' %}"
+               class="inline-block border border-clay text-clay px-5 py-2 rounded-sm text-sm font-medium hover:bg-clay hover:text-cream transition-colors">
+                Eliminar mi cuenta
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

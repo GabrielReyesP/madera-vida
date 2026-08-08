@@ -1,0 +1,38 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Eliminar mi cuenta — Madera & Vida{% endblock %}
+
+{% block content %}
+<section class="max-w-md mx-auto px-6 py-16">
+    <h1 class="font-display text-3xl font-semibold text-bark mb-4">Eliminar mi cuenta</h1>
+
+    <div class="bg-clay/5 border border-clay/30 rounded-sm p-5 mb-6 text-sm text-bark/70 space-y-2">
+        <p><strong class="text-bark">Esta acción es permanente.</strong></p>
+        <p>Se eliminarán tu cuenta, tu perfil y tus datos de contacto.</p>
+        <p>
+            Tus pedidos se conservarán de forma <strong>anonimizada</strong> (sin tu nombre, correo,
+            teléfono ni RUT), porque la normativa tributaria obliga a mantener los registros contables.
+        </p>
+    </div>
+
+    <form method="post" class="space-y-5">
+        {% csrf_token %}
+        <div>
+            <label for="confirm" class="block text-sm font-medium text-bark mb-1">
+                Escribe <span class="font-mono text-clay">ELIMINAR</span> para confirmar
+            </label>
+            <input type="text" name="confirm" id="confirm" required autocomplete="off"
+                   class="w-full border border-walnut/30 rounded-sm px-4 py-2 text-sm bg-white
+                          focus:outline-none focus:ring-2 focus:ring-clay">
+        </div>
+        <button type="submit"
+                class="w-full bg-clay text-cream py-3 rounded-sm font-medium hover:bg-bark transition-colors">
+            Eliminar mi cuenta definitivamente
+        </button>
+    </form>
+
+    <a href="{% url 'accounts:privacy_center' %}" class="inline-block mt-6 text-clay hover:underline text-sm">
+        &larr; Cancelar
+    </a>
+</section>
+{% endblock %}

@@ -117,3 +117,37 @@ class WorkerProfileForm(TailwindStyledFormMixin, forms.ModelForm):
         # El modelo guarda el nombre de la AFP como texto; el formulario
         # usa un ModelChoiceField para forzar que se elija una AFP valida.
         return self.cleaned_data['afp'].name
+
+
+# --- Ley 19.628 / 21.719: rectificacion de datos por el propio usuario ---
+
+class CustomerDataForm(TailwindStyledFormMixin, forms.ModelForm):
+    """Permite al cliente corregir sus propios datos personales (derecho de rectificacion)."""
+
+    first_name = forms.CharField(label='Nombre', max_length=100)
+    last_name = forms.CharField(label='Apellido', max_length=100)
+
+    field_order = ['first_name', 'last_name', 'rut', 'phone', 'address']
+
+    class Meta:
+        model = CustomerProfile
+        fields = ('rut', 'phone', 'address')
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        if user is not None:
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            css = self.input_css
+            self.fields['first_name'].widget.attrs['class'] = css
+            self.fields['last_name'].widget.attrs['class'] = css
+
+    def save(self, commit=True):
+        profile = super().save(commit=commit)
+        if self.user is not None:
+            self.user.first_name = self.cleaned_data['first_name']
+            self.user.last_name = self.cleaned_data['last_name']
+            if commit:
+                self.user.save(update_fields=['first_name', 'last_name'])
+        return profile

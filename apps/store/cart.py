@@ -68,7 +68,10 @@ class Cart:
             self._save()
 
     def clear(self):
-        self.session[CART_SESSION_KEY] = {}
+        # Hay que reasignar self.cart, no solo la sesion: _save() vuelve a
+        # escribir self.cart, y si sigue apuntando al diccionario anterior
+        # el carrito viejo se reescribe encima del vacio.
+        self.cart = {}
         self._save()
 
     def __iter__(self):

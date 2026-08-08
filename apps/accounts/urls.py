@@ -16,6 +16,12 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='catalog:home'), name='logout'),
     path('registro/', views.register, name='register'),
 
+    # Ley 19.628 / 21.719: derechos sobre datos personales
+    path('privacidad/', views.privacy_center, name='privacy_center'),
+    path('privacidad/mis-datos/', views.data_export, name='data_export'),
+    path('privacidad/rectificar/', views.data_update, name='data_update'),
+    path('privacidad/eliminar/', views.data_delete, name='data_delete'),
+
     # Recuperacion de contrasena para clientes (RF-12)
     path(
         'password-reset/',

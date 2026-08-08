@@ -1,0 +1,37 @@
+# /etc/systemd/system/maderavida.service
+# Servicio systemd para Gunicorn (servidor WSGI de produccion).
+#
+# Instalacion:
+#   sudo cp deploy/gunicorn.service /etc/systemd/system/maderavida.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now maderavida
+#   sudo systemctl status maderavida
+
+[Unit]
+Description=Madera & Vida - Gunicorn (Django)
+After=network.target mysql.service
+
+[Service]
+User=maderavida
+Group=www-data
+WorkingDirectory=/srv/maderavida
+Environment="DJANGO_ENV=production"
+EnvironmentFile=/srv/maderavida/.env
+ExecStart=/srv/maderavida/venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/run/maderavida/gunicorn.sock \
+    --access-logfile /var/log/maderavida/access.log \
+    --error-logfile /var/log/maderavida/error.log \
+    config.wsgi:application
+
+RuntimeDirectory=maderavida
+Restart=always
+RestartSec=5
+
+# Endurecimiento basico del servicio
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
