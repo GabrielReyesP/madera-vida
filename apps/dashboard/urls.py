@@ -35,4 +35,9 @@ urlpatterns = [
     path('liquidaciones/<int:pk>/', views.payroll_detail, name='payroll_detail'),
 
     path('auditoria/', views.audit_log_view, name='audit_log'),
+
+    path('reportes/', views.reports_index, name='reports_index'),
+    path('reportes/ventas/', views.report_sales, name='report_sales'),
+    path('reportes/liquidaciones/', views.report_payroll, name='report_payroll'),
+    path('reportes/horas-extras/', views.report_overtime, name='report_overtime'),
 ]

@@ -60,6 +60,9 @@
                     <a href="{% url 'dashboard:adjustment_list' %}" class="hover:text-clay transition-colors">Ajustes</a>
                     <a href="{% url 'dashboard:payroll_list' %}" class="hover:text-clay transition-colors">Liquidaciones</a>
                 {% endif %}
+                {% if wp.can_manage_orders or wp.can_manage_hr %}
+                    <a href="{% url 'dashboard:reports_index' %}" class="hover:text-clay transition-colors">Reportes</a>
+                {% endif %}
                 {% if wp.is_superior %}
                     <a href="{% url 'dashboard:overtime_list' %}" class="hover:text-clay transition-colors">Horas extras</a>
                     <a href="{% url 'dashboard:audit_log' %}" class="hover:text-clay transition-colors">Auditoría</a>

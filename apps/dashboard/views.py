@@ -6,17 +6,18 @@ reset de contraseñas de trabajadores y visor de auditoria.
 """
 
 import json
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.core.paginator import Paginator
-from django.db.models import F, ProtectedError, Sum
+from django.db.models import Count, F, ProtectedError, Sum
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from apps.accounts.decorators import role_required, superior_required, worker_required
@@ -30,11 +31,29 @@ from apps.hr.forms import OvertimeRecordForm, PayrollAdjustmentForm, PayrollGene
 from apps.hr.models import OvertimeRecord, PayrollAdjustment, PayrollRecord
 from apps.store.models import Order
 
+from . import reports
+
 NEXT_STATUS = {
     Order.Status.PENDIENTE: Order.Status.PAGADO,
     Order.Status.PAGADO: Order.Status.LISTO_RETIRO,
     Order.Status.LISTO_RETIRO: Order.Status.ENTREGADO,
 }
+
+
+def _local_datetime_range(start_date, end_date):
+    """
+    Convierte un rango de fechas LOCALES (America/Santiago) al rango de
+    datetimes correspondiente, para filtrar campos DateTimeField.
+
+    Es necesario porque con USE_TZ=True los datetimes se guardan en UTC:
+    filtrar con created_at__date compara contra la fecha UTC, y en Chile
+    (UTC-4) un pedido de las 21:00 quedaria registrado al dia siguiente,
+    desapareciendo del filtro.
+    """
+    tz = timezone.get_current_timezone()
+    start_dt = timezone.make_aware(datetime.combine(start_date, time.min), tz)
+    end_dt = timezone.make_aware(datetime.combine(end_date, time.max), tz)
+    return start_dt, end_dt
 
 
 # --- Dashboard (RF-19) ---
@@ -44,9 +63,13 @@ def index(request):
     today = timezone.localdate()
     start_date = today - timedelta(days=13)
 
+    sales_start_dt, sales_end_dt = _local_datetime_range(start_date, today)
     sales_by_day = (
-        Order.objects.filter(status=Order.Status.PAGADO, paid_at__date__gte=start_date)
-        .annotate(day=TruncDate('paid_at'))
+        Order.objects.filter(
+            status=Order.Status.PAGADO,
+            paid_at__gte=sales_start_dt, paid_at__lte=sales_end_dt,
+        )
+        .annotate(day=TruncDate('paid_at', tzinfo=timezone.get_current_timezone()))
         .values('day')
         .annotate(total=Sum('total'))
         .order_by('day')
@@ -376,3 +399,84 @@ def payroll_generate(request):
 def payroll_detail(request, pk):
     record = get_object_or_404(PayrollRecord.objects.select_related('worker__user'), pk=pk)
     return render(request, 'dashboard/payroll_detail.html', {'record': record})
+
+
+# --- Reportes Excel (RF-28) ---
+
+def _parse_period(request):
+    """Lee ?start=YYYY-MM-DD&end=YYYY-MM-DD de la URL; por defecto, el mes en curso."""
+    today = timezone.localdate()
+    start = parse_date(request.GET.get('start', '')) or today.replace(day=1)
+    end = parse_date(request.GET.get('end', '')) or today
+    return start, end
+
+
+@worker_required
+def reports_index(request):
+    wp = getattr(request.user, 'worker_profile', None)
+    context = {
+        'can_view_sales': bool(wp and wp.can_manage_orders),
+        'can_view_hr': bool(wp and wp.can_manage_hr),
+    }
+    return render(request, 'dashboard/reports_index.html', context)
+
+
+@role_required('jefatura', 'administracion', 'venta')
+def report_sales(request):
+    start, end = _parse_period(request)
+
+    if request.GET.get('export') == 'xlsx':
+        return reports.build_sales_report(start, end)
+
+    start_dt, end_dt = _local_datetime_range(start, end)
+    orders = Order.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
+    totals = orders.aggregate(count=Count('id'), total=Sum('total'), iva=Sum('iva_total'))
+
+    context = {
+        'start': start, 'end': end,
+        'orders_count': totals['count'] or 0,
+        'orders_total': totals['total'] or 0,
+        'orders_iva': totals['iva'] or 0,
+    }
+    return render(request, 'dashboard/report_sales.html', context)
+
+
+@role_required('jefatura', 'administracion', 'rrhh')
+def report_payroll(request):
+    start, end = _parse_period(request)
+
+    if request.GET.get('export') == 'xlsx':
+        return reports.build_payroll_report(start, end)
+
+    records = PayrollRecord.objects.filter(period__gte=start.replace(day=1), period__lte=end)
+    totals = records.aggregate(
+        count=Count('id'), net_total=Sum('net_pay'),
+        afp_total=Sum('afp_amount'), health_total=Sum('health_amount'),
+    )
+
+    context = {
+        'start': start, 'end': end,
+        'payroll_count': totals['count'] or 0,
+        'payroll_net_total': totals['net_total'] or 0,
+        'payroll_afp_total': totals['afp_total'] or 0,
+        'payroll_health_total': totals['health_total'] or 0,
+    }
+    return render(request, 'dashboard/report_payroll.html', context)
+
+
+@role_required('jefatura', 'administracion', 'rrhh')
+def report_overtime(request):
+    start, end = _parse_period(request)
+
+    if request.GET.get('export') == 'xlsx':
+        return reports.build_overtime_report(start, end)
+
+    records = OvertimeRecord.objects.filter(date__gte=start, date__lte=end)
+    totals = records.aggregate(hours_total=Sum('hours'), cost_total=Sum('total'))
+
+    context = {
+        'start': start, 'end': end,
+        'overtime_hours_total': totals['hours_total'] or 0,
+        'overtime_cost_total': totals['cost_total'] or 0,
+    }
+    return render(request, 'dashboard/report_overtime.html', context)
