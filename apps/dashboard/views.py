@@ -7,6 +7,7 @@ reset de contraseñas de trabajadores y visor de auditoria.
 
 import json
 from datetime import timedelta
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
@@ -19,11 +20,14 @@ from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_POST
 
 from apps.accounts.decorators import role_required, superior_required, worker_required
-from apps.accounts.models import WorkerProfile
+from apps.accounts.forms import WorkerProfileForm, WorkerUserForm
+from apps.accounts.models import CustomUser, WorkerProfile
 from apps.catalog.forms import ProductForm
 from apps.catalog.models import Product
 from apps.core.audit import log_action
 from apps.core.models import AuditLog
+from apps.hr.forms import OvertimeRecordForm, PayrollAdjustmentForm, PayrollGenerateForm
+from apps.hr.models import OvertimeRecord, PayrollAdjustment, PayrollRecord
 from apps.store.models import Order
 
 NEXT_STATUS = {
@@ -59,10 +63,17 @@ def index(request):
         is_active=True, stock__lte=F('low_stock_threshold'),
     )
 
+    month_start = today.replace(day=1)
+    overtime_this_month = OvertimeRecord.objects.filter(date__gte=month_start, date__lte=today)
+    overtime_hours_total = sum((o.hours for o in overtime_this_month), Decimal('0'))
+    overtime_cost_total = sum((o.total for o in overtime_this_month), Decimal('0'))
+
     context = {
         'sales_labels_json': json.dumps(labels),
         'sales_data_json': json.dumps(data),
         'low_stock_products': low_stock_products,
+        'overtime_hours_total': overtime_hours_total,
+        'overtime_cost_total': overtime_cost_total,
         'worker_profile': getattr(request.user, 'worker_profile', None),
     }
     return render(request, 'dashboard/index.html', context)
@@ -191,13 +202,63 @@ def order_update_status(request, order_number):
     return redirect('dashboard:order_list')
 
 
-# --- Trabajadores: reset de contraseña (RF-17) ---
+# --- Trabajadores: CRUD (RRHH + nivel superior, RF-21) y reset de contraseña (RF-17) ---
 
-@superior_required
+@role_required('jefatura', 'administracion', 'rrhh')
 def worker_list(request):
     workers = WorkerProfile.objects.select_related('user').order_by('user__first_name')
-    context = {'workers': workers}
+    can_reset_password = getattr(getattr(request.user, 'worker_profile', None), 'is_superior', False)
+    context = {'workers': workers, 'can_reset_password': can_reset_password}
     return render(request, 'dashboard/worker_list.html', context)
+
+
+@role_required('jefatura', 'administracion', 'rrhh')
+def worker_create(request):
+    if request.method == 'POST':
+        user_form = WorkerUserForm(request.POST)
+        profile_form = WorkerProfileForm(request.POST)
+        if user_form.is_valid() and profile_form.is_valid():
+            new_password = get_random_string(
+                length=12, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
+            )
+            user = user_form.save(commit=False)
+            user.user_type = CustomUser.UserType.WORKER
+            user.set_password(new_password)
+            user.save()
+
+            profile = profile_form.save(commit=False)
+            profile.user = user
+            profile.save()
+
+            log_action(
+                AuditLog.Action.WORKER_CREATE, 'CustomUser', user.pk,
+                after={'email': user.email, 'role': profile.role}, request=request,
+            )
+            context = {'worker': profile, 'new_password': new_password, 'is_new': True}
+            return render(request, 'dashboard/worker_password_reset_result.html', context)
+    else:
+        user_form = WorkerUserForm()
+        profile_form = WorkerProfileForm()
+
+    context = {'user_form': user_form, 'profile_form': profile_form, 'is_new': True}
+    return render(request, 'dashboard/worker_form.html', context)
+
+
+@role_required('jefatura', 'administracion', 'rrhh')
+def worker_edit(request, pk):
+    worker = get_object_or_404(WorkerProfile, pk=pk)
+
+    if request.method == 'POST':
+        profile_form = WorkerProfileForm(request.POST, instance=worker)
+        if profile_form.is_valid():
+            profile_form.save()
+            messages.success(request, f'Perfil de {worker.user.get_full_name()} actualizado.')
+            return redirect('dashboard:worker_list')
+    else:
+        profile_form = WorkerProfileForm(instance=worker)
+
+    context = {'profile_form': profile_form, 'is_new': False, 'worker': worker}
+    return render(request, 'dashboard/worker_form.html', context)
 
 
 @require_POST
@@ -227,3 +288,91 @@ def audit_log_view(request):
     paginator = Paginator(logs, 25)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'dashboard/audit_log.html', {'page_obj': page_obj})
+
+
+# --- Horas extras (RF-16, RF-24) ---
+
+@role_required('jefatura', 'administracion')
+def overtime_list(request):
+    if request.method == 'POST':
+        form = OvertimeRecordForm(request.POST)
+        if form.is_valid():
+            record = form.save()
+            messages.success(
+                request,
+                f'{record.hours}h registradas para {record.worker} el {record.date:%d-%m-%Y} '
+                f'(${record.total:,.0f}).'.replace(',', '.'),
+            )
+            return redirect('dashboard:overtime_list')
+    else:
+        form = OvertimeRecordForm()
+
+    records = OvertimeRecord.objects.select_related('worker__user').order_by('-date')[:50]
+    context = {'form': form, 'records': records}
+    return render(request, 'dashboard/overtime_list.html', context)
+
+
+# --- Anticipos, bonos y descuentos (RF-25) ---
+
+@role_required('jefatura', 'administracion', 'rrhh')
+def adjustment_list(request):
+    if request.method == 'POST':
+        form = PayrollAdjustmentForm(request.POST)
+        if form.is_valid():
+            adjustment = form.save()
+            messages.success(
+                request,
+                f'{adjustment.get_adjustment_type_display()} registrado para {adjustment.worker} '
+                f'(${adjustment.amount:,.0f}).'.replace(',', '.'),
+            )
+            return redirect('dashboard:adjustment_list')
+    else:
+        form = PayrollAdjustmentForm()
+
+    adjustments = PayrollAdjustment.objects.select_related('worker__user').order_by('-period')[:50]
+    context = {'form': form, 'adjustments': adjustments}
+    return render(request, 'dashboard/adjustment_list.html', context)
+
+
+# --- Liquidaciones de sueldo (RF-23, RF-26) ---
+
+@role_required('jefatura', 'administracion', 'rrhh')
+def payroll_list(request):
+    records = PayrollRecord.objects.select_related('worker__user').order_by('-period')
+    context = {'records': records}
+    return render(request, 'dashboard/payroll_list.html', context)
+
+
+@role_required('jefatura', 'administracion', 'rrhh')
+def payroll_generate(request):
+    if request.method == 'POST':
+        form = PayrollGenerateForm(request.POST)
+        if form.is_valid():
+            worker = form.cleaned_data['worker']
+            period = form.cleaned_data['period'].replace(day=1)
+
+            try:
+                record = PayrollRecord.objects.get(worker=worker, period=period)
+            except PayrollRecord.DoesNotExist:
+                record = PayrollRecord(worker=worker, period=period)
+
+            record.calculate()
+            record.save()
+
+            log_action(
+                AuditLog.Action.PAYROLL_GENERATED, 'PayrollRecord', record.pk,
+                after={'worker': str(worker), 'period': str(period), 'net_pay': str(record.net_pay)},
+                request=request,
+            )
+            messages.success(request, f'Liquidación de {worker} para {period:%m-%Y} generada.')
+            return redirect('dashboard:payroll_detail', pk=record.pk)
+    else:
+        form = PayrollGenerateForm()
+
+    return render(request, 'dashboard/payroll_generate.html', {'form': form})
+
+
+@role_required('jefatura', 'administracion', 'rrhh')
+def payroll_detail(request, pk):
+    record = get_object_or_404(PayrollRecord.objects.select_related('worker__user'), pk=pk)
+    return render(request, 'dashboard/payroll_detail.html', {'record': record})

@@ -1,0 +1,64 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}Anticipos, bonos y descuentos — Panel interno{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold text-bark mb-8">Anticipos, bonos y descuentos</h1>
+
+<div class="grid md:grid-cols-3 gap-8">
+    <div class="md:col-span-1">
+        <h2 class="font-medium text-bark mb-4">Registrar</h2>
+        {% if form.non_field_errors %}
+            <div class="bg-clay/10 border border-clay/30 text-clay text-sm rounded-sm px-4 py-3 mb-4">
+                {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-bark mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<p class="text-xs text-clay mt-1">{{ error }}</p>{% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit"
+                    class="w-full bg-bark text-cream py-3 rounded-sm font-medium hover:bg-clay transition-colors">
+                Registrar
+            </button>
+        </form>
+    </div>
+
+    <div class="md:col-span-2">
+        <h2 class="font-medium text-bark mb-4">Últimos registros</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-bark/50 border-b border-walnut/20">
+                        <th class="py-2 pr-4">Trabajador</th>
+                        <th class="py-2 pr-4">Tipo</th>
+                        <th class="py-2 pr-4">Periodo</th>
+                        <th class="py-2 pr-4 text-right">Monto</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-walnut/10">
+                    {% for adjustment in adjustments %}
+                        <tr>
+                            <td class="py-3 pr-4 text-bark">{{ adjustment.worker }}</td>
+                            <td class="py-3 pr-4">
+                                <span class="text-xs px-2 py-1 rounded-sm bg-walnut/10 text-bark">
+                                    {{ adjustment.get_adjustment_type_display }}
+                                </span>
+                            </td>
+                            <td class="py-3 pr-4 text-bark/60 text-xs">{{ adjustment.period|date:"m-Y" }}</td>
+                            <td class="py-3 pr-4 text-right font-mono">${{ adjustment.amount|floatformat:0 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="py-6 text-center text-bark/40">Aún no hay registros.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

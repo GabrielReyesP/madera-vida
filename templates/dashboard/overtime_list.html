@@ -1,0 +1,65 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}Horas extras — Panel interno{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold text-bark mb-8">Horas extras</h1>
+
+<div class="grid md:grid-cols-3 gap-8">
+    <div class="md:col-span-1">
+        <h2 class="font-medium text-bark mb-4">Registrar</h2>
+        {% if form.non_field_errors %}
+            <div class="bg-clay/10 border border-clay/30 text-clay text-sm rounded-sm px-4 py-3 mb-4">
+                {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-bark mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<p class="text-xs text-clay mt-1">{{ error }}</p>{% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit"
+                    class="w-full bg-bark text-cream py-3 rounded-sm font-medium hover:bg-clay transition-colors">
+                Registrar
+            </button>
+        </form>
+        <p class="text-xs text-bark/40 mt-3">
+            El valor de la hora se calcula solo, según el sueldo base del trabajador (RL-04: recargo 50%).
+        </p>
+    </div>
+
+    <div class="md:col-span-2">
+        <h2 class="font-medium text-bark mb-4">Últimos registros</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-bark/50 border-b border-walnut/20">
+                        <th class="py-2 pr-4">Trabajador</th>
+                        <th class="py-2 pr-4">Fecha</th>
+                        <th class="py-2 pr-4 text-right">Horas</th>
+                        <th class="py-2 pr-4 text-right">Valor hora</th>
+                        <th class="py-2 pr-4 text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-walnut/10">
+                    {% for record in records %}
+                        <tr>
+                            <td class="py-3 pr-4 text-bark">{{ record.worker }}</td>
+                            <td class="py-3 pr-4 text-bark/60 text-xs">{{ record.date|date:"d-m-Y" }}</td>
+                            <td class="py-3 pr-4 text-right font-mono">{{ record.hours }}</td>
+                            <td class="py-3 pr-4 text-right font-mono text-bark/60">${{ record.overtime_rate|floatformat:0 }}</td>
+                            <td class="py-3 pr-4 text-right font-mono">${{ record.total|floatformat:0 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="py-6 text-center text-bark/40">Aún no hay horas extras registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

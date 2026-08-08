@@ -9,7 +9,7 @@ from django.db import models
 from django.utils import timezone
 
 from .managers import CustomUserManager
-from .validators import validate_rut
+from .validators import validate_minimum_wage, validate_rut
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
@@ -104,6 +104,7 @@ class WorkerProfile(models.Model):
     )
     base_salary = models.DecimalField(
         'Sueldo base (CLP)', max_digits=10, decimal_places=0,
+        validators=[validate_minimum_wage],
     )
     hire_date = models.DateField('Fecha de contratacion', null=True, blank=True)
 

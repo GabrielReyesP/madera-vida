@@ -10,6 +10,7 @@ Formularios de accounts:
   contrasena (RF-12) con el mismo estilo visual.
 """
 
+from django import forms
 from django.contrib.auth.forms import (
     AuthenticationForm,
     PasswordResetForm,
@@ -18,7 +19,7 @@ from django.contrib.auth.forms import (
     UserCreationForm,
 )
 
-from .models import CustomerProfile, CustomUser
+from .models import CustomerProfile, CustomUser, WorkerProfile
 
 
 class TailwindStyledFormMixin:
@@ -81,3 +82,38 @@ class StyledPasswordResetForm(TailwindStyledFormMixin, PasswordResetForm):
 
 class StyledSetPasswordForm(TailwindStyledFormMixin, SetPasswordForm):
     pass
+
+
+# --- Creacion de trabajadores desde el panel interno (RF-21) ---
+
+class WorkerUserForm(TailwindStyledFormMixin, forms.ModelForm):
+    """Datos de cuenta del trabajador. La contraseña se genera aparte
+    (no la elige el trabajador, la asigna administración - decision #9)."""
+
+    class Meta:
+        model = CustomUser
+        fields = ('email', 'first_name', 'last_name')
+
+
+class WorkerProfileForm(TailwindStyledFormMixin, forms.ModelForm):
+    afp = forms.ModelChoiceField(queryset=None, label='AFP', empty_label='Selecciona una AFP')
+
+    class Meta:
+        model = WorkerProfile
+        fields = ('rut', 'role', 'afp', 'health_system', 'contract_type', 'base_salary', 'hire_date')
+        widgets = {'hire_date': forms.DateInput(attrs={'type': 'date'})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.core.models import AfpConfig
+        self.fields['afp'].queryset = AfpConfig.objects.filter(is_active=True)
+        # Si se está editando un perfil existente, preseleccionar su AFP actual.
+        if self.instance and self.instance.pk and self.instance.afp:
+            existing = AfpConfig.objects.filter(name__iexact=self.instance.afp).first()
+            if existing:
+                self.initial['afp'] = existing.pk
+
+    def clean_afp(self):
+        # El modelo guarda el nombre de la AFP como texto; el formulario
+        # usa un ModelChoiceField para forzar que se elija una AFP valida.
+        return self.cleaned_data['afp'].name

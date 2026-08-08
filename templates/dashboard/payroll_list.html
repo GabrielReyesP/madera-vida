@@ -1,0 +1,46 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}Liquidaciones — Panel interno{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <h1 class="font-display text-2xl font-semibold text-bark">Liquidaciones de sueldo</h1>
+    <a href="{% url 'dashboard:payroll_generate' %}"
+       class="bg-bark text-cream px-5 py-2 rounded-sm text-sm font-medium hover:bg-clay transition-colors">
+        + Generar liquidación
+    </a>
+</div>
+
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-bark/50 border-b border-walnut/20">
+                <th class="py-2 pr-4">Trabajador</th>
+                <th class="py-2 pr-4">Periodo</th>
+                <th class="py-2 pr-4 text-right">Imponible</th>
+                <th class="py-2 pr-4 text-right">Líquido</th>
+                <th class="py-2 pr-4">Estado</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-walnut/10">
+            {% for record in records %}
+                <tr>
+                    <td class="py-3 pr-4">
+                        <a href="{% url 'dashboard:payroll_detail' record.pk %}" class="text-bark hover:text-clay transition-colors">
+                            {{ record.worker }}
+                        </a>
+                    </td>
+                    <td class="py-3 pr-4 text-bark/60 text-xs">{{ record.period|date:"m-Y" }}</td>
+                    <td class="py-3 pr-4 text-right font-mono text-bark/60">${{ record.taxable_income|floatformat:0 }}</td>
+                    <td class="py-3 pr-4 text-right font-mono">${{ record.net_pay|floatformat:0 }}</td>
+                    <td class="py-3 pr-4">
+                        <span class="text-xs px-2 py-1 rounded-sm bg-walnut/10 text-bark">{{ record.get_status_display }}</span>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="py-6 text-center text-bark/40">Aún no hay liquidaciones generadas.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

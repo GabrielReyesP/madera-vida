@@ -4,7 +4,7 @@ apps/core/admin.py
 
 from django.contrib import admin
 
-from .models import AuditLog, CompanyInfo
+from .models import AfpConfig, AuditLog, CompanyInfo, MinimumWageConfig
 
 
 @admin.register(CompanyInfo)
@@ -33,3 +33,15 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(MinimumWageConfig)
+class MinimumWageConfigAdmin(admin.ModelAdmin):
+    list_display = ('value', 'effective_date')
+    ordering = ('-effective_date',)
+
+
+@admin.register(AfpConfig)
+class AfpConfigAdmin(admin.ModelAdmin):
+    list_display = ('name', 'percentage', 'is_active')
+    list_filter = ('is_active',)

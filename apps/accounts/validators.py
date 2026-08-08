@@ -44,3 +44,19 @@ def validate_rut(value):
         raise ValidationError(
             f'RUT inválido: el dígito verificador no coincide (se esperaba "{dv_esperado}").'
         )
+
+
+def validate_minimum_wage(value):
+    """
+    Valida que el sueldo base no sea inferior al sueldo minimo vigente
+    (RL-03, RF-22). Import diferido de apps.core.models para no acoplar
+    accounts a core en tiempo de carga del modulo.
+    """
+    from apps.core.models import MinimumWageConfig
+
+    minimum = MinimumWageConfig.get_current()
+    if value < minimum:
+        raise ValidationError(
+            f'El sueldo base (${value:,.0f}) no puede ser menor al sueldo mínimo vigente '
+            f'(${minimum:,.0f}).'.replace(',', '.')
+        )

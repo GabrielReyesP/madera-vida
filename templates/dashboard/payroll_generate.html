@@ -1,0 +1,32 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}Generar liquidación — Panel interno{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold text-bark mb-2">Generar liquidación</h1>
+<p class="text-bark/50 text-sm mb-8">
+    Se calculan automáticamente horas extras del periodo, AFP, salud (7%) y ajustes registrados.
+</p>
+
+{% if form.non_field_errors %}
+    <div class="bg-clay/10 border border-clay/30 text-clay text-sm rounded-sm px-4 py-3 mb-6">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+{% endif %}
+
+<form method="post" class="max-w-md space-y-5">
+    {% csrf_token %}
+    {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-bark mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="text-xs text-bark/40 mt-1">{{ field.help_text }}</p>{% endif %}
+            {% for error in field.errors %}<p class="text-xs text-clay mt-1">{{ error }}</p>{% endfor %}
+        </div>
+    {% endfor %}
+    <button type="submit"
+            class="w-full bg-bark text-cream py-3 rounded-sm font-medium hover:bg-clay transition-colors">
+        Generar
+    </button>
+</form>
+{% endblock %}

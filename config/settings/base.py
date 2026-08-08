@@ -77,7 +77,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',  # HTMX: detecta requests HTMX
-    # 'apps.core.middleware.AuditLogMiddleware',  # Se activa en Fase 4
+    
 ]
 
 # ============================================

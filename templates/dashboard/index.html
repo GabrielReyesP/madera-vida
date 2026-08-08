@@ -31,10 +31,20 @@
 </div>
 
 <div class="border border-walnut/20 rounded-sm p-6">
-    <h2 class="font-medium text-bark mb-2">Horas extras del mes</h2>
-    <p class="text-bark/50 text-sm">
-        Este indicador se activa en Fase 5, cuando se implemente el módulo de Recursos Humanos.
-    </p>
+    <h2 class="font-medium text-bark mb-4">Horas extras del mes</h2>
+    <div class="flex gap-8">
+        <div>
+            <p class="text-3xl font-mono text-bark">{{ overtime_hours_total|floatformat:1 }}</p>
+            <p class="text-xs text-bark/50">horas registradas</p>
+        </div>
+        <div>
+            <p class="text-3xl font-mono text-bark">${{ overtime_cost_total|floatformat:0 }}</p>
+            <p class="text-xs text-bark/50">costo total</p>
+        </div>
+    </div>
+    {% if overtime_hours_total == 0 %}
+        <p class="text-bark/40 text-xs mt-3">Aún no hay horas extras registradas este mes.</p>
+    {% endif %}
 </div>
 
 <script>

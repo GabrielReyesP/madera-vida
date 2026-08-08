@@ -1,0 +1,60 @@
+{% extends "layout/base_panel.html" %}
+
+{% block title %}{% if is_new %}Nuevo trabajador{% else %}Editar trabajador{% endif %} — Panel interno{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold text-bark mb-2">
+    {% if is_new %}Nuevo trabajador{% else %}Editar: {{ worker.user.get_full_name }}{% endif %}
+</h1>
+{% if is_new %}
+    <p class="text-bark/50 text-sm mb-8">
+        Se generará una contraseña temporal automáticamente — no la eliges tú (RF-13).
+    </p>
+{% endif %}
+
+<form method="post" class="max-w-xl space-y-8">
+    {% csrf_token %}
+
+    {% if is_new %}
+        <div>
+            <h2 class="font-medium text-bark mb-4 pb-2 border-b border-walnut/10">Cuenta</h2>
+            <div class="space-y-5">
+                {% for field in user_form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-bark mb-1">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-clay mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="text-sm text-bark/60">
+            <span class="font-medium text-bark">Email:</span> {{ worker.user.email }}
+            <span class="text-xs text-bark/40 block mt-1">El email no se puede editar aquí.</span>
+        </div>
+    {% endif %}
+
+    <div>
+        <h2 class="font-medium text-bark mb-4 pb-2 border-b border-walnut/10">Perfil de trabajador</h2>
+        <div class="space-y-5">
+            {% for field in profile_form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-bark mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<p class="text-xs text-bark/40 mt-1">{{ field.help_text }}</p>{% endif %}
+                    {% for error in field.errors %}<p class="text-xs text-clay mt-1">{{ error }}</p>{% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+        <button type="submit"
+                class="bg-bark text-cream px-8 py-3 rounded-sm font-medium hover:bg-clay transition-colors">
+            Guardar
+        </button>
+        <a href="{% url 'dashboard:worker_list' %}" class="text-sm text-clay hover:underline">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
